@@ -1,0 +1,95 @@
+* {
+  box-sizing: border-box;
+}
+body {
+  font-family: 'Times New Roman', Times, serif;
+  margin: 0;
+  background: rgb(0, 0, 0);
+  color: rgb(255, 255, 255);
+}
+.page-header {
+  position: sticky;
+  top: 0;
+  background: rgb(17, 17, 17);
+  padding: 10px;
+}
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.topbar-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+#searchInput {
+  width: 300px;
+  padding: 6px;
+  border-radius: 10px;
+  border: none;
+}
+.top-toolbar {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  overflow-x: auto;
+}
+h1 {
+  text-align: center;
+  color: rgb(4, 208, 144);
+  margin: 10px 0;
+}
+.app {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+}
+.panel {
+  background: rgb(7, 89, 63);
+  padding: 20px;
+  border-radius: 10px;
+}
+.form-panel {
+  width: 350px;
+}
+.list-panel {
+  flex: 1;
+}
+.field {
+  margin-bottom: 10px;
+}
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 6px;
+  border-radius: 5px;
+  border: none;
+}
+button {
+  padding: 8px 12px;
+  cursor: pointer;
+  border: none;
+  border-radius: 5px;
+}
+.error-text {
+  color: rgb(255, 0, 0);
+  font-size: 12px;
+}
+.invalid {
+  border: 2px solid rgb(255, 0, 0);
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  background: rgb(255, 255, 255);
+  color: rgb(0, 0, 0);
+}
+th,
+td {
+  border: 1px solid black;
+  padding: 8px;
+}
