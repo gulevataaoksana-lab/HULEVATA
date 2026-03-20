@@ -1,10 +1,14 @@
 export interface CreateReportDto {
     title: string;
-    content: string;
-    severity?: string;
+    severity: string;  
+    status: string;    
+    reporter: string;  
+    description: string; 
 }
 export interface UpdateReportDto {
-    title?: string;
-    content?: string;
-    severity?: string;
+    title: string;
+    severity: string;
+    status: string;
+    reporter: string;
+    description: string;
 }
