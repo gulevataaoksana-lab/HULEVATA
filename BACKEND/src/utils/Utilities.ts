@@ -1,14 +1,14 @@
-export const isEmpty = (value: string | undefined | null): boolean => {
+export function isEmpty(value: string | undefined | null): boolean {
     return !value || value.trim().length === 0;
-};
-export const isValidId = (id: string): boolean => {
+}
+export function isValidId(id: string): boolean {
     return id.length > 0;
-};
-export const formatResponse = (data: any, message: string = 'Success') => {
+}
+export function formatResponse(data: any, message: string = 'Success') {
     return {
         status: 'success',
-        message,
-        data,
+        message: message,
+        data: data,
         timestamp: new Date().toISOString()
     };
-};
+}

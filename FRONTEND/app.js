@@ -1,159 +1,227 @@
-const API_URL = "http://localhost:3000/api/reports";
-const USERS_URL = "http://localhost:3000/api/users"; 
+const API_URL = "http://localhost:3000/api/reports-full";
+const USERS_URL = "http://localhost:3000/api/users";
+const BASE_REPORTS_URL = "http://localhost:3000/api/reports";
+
 const severityRank = { "Низький": 1, "Середній": 2, "Високий": 3, "Критичний": 4 };
+
 const form = document.getElementById("reportForm");
-const clearBtn = document.getElementById("clearBtn");
-const submitBtn = document.getElementById("submitBtn");
 const titleInput = document.getElementById("title");
 const severitySelect = document.getElementById("severity");
 const statusSelect = document.getElementById("status");
 const descriptionInput = document.getElementById("description");
-const reporterInput = document.getElementById("reporter"); 
+const reporterInput = document.getElementById("reporter");
 const editIdInput = document.getElementById("editId");
-const titleError = document.getElementById("titleError");
-const severityError = document.getElementById("severityError");
-const statusError = document.getElementById("statusError");
-const descriptionError = document.getElementById("descriptionError");
-const reporterError = document.getElementById("reporterError");
+const submitBtn = document.getElementById("submitBtn");
 const tbody = document.getElementById("reportsTableBody");
+
 const searchInput = document.getElementById("searchInput");
 const filterStatus = document.getElementById("filterStatus");
 const filterSeverity = document.getElementById("filterSeverity");
 const sortSelect = document.getElementById("sortSelect");
-const clearFiltersBtn = document.getElementById("clearFiltersBtn");
+
 let state = { reports: [], users: [], search: "", statusFilter: "", sevFilter: "", sort: "" };
+
+// 1. Завантаження даних
+async function loadReports() {
+    try {
+        const res = await fetch(API_URL);
+        const json = await res.json();
+        console.log("Дані з сервера:", json.data);
+        state.reports = json.data || [];
+        render();
+    } catch (err) {
+        console.error("Помилка завантаження звітів:", err);
+    }
+}
+
 async function loadUsers() {
     try {
         const res = await fetch(USERS_URL);
-        state.users = await res.json();
+        const json = await res.json();
+        state.users = json.data || [];
     } catch (err) {
-        console.error(err);
+        console.error("Помилка завантаження користувачів:", err);
     }
 }
-function escapeHtml(s) {
-    return String(s).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
-}
-function setError(el, msg) { if (el) el.textContent = msg; }
-function markInvalid(input, isInvalid) { if (input) input.classList.toggle("invalid", isInvalid); }
-function clearErrors() {
-    [titleError, severityError, statusError, descriptionError, reporterError].forEach(el => setError(el, ""));
-    [titleInput, severitySelect, statusSelect, descriptionInput, reporterInput].forEach(el => markInvalid(el, false));
-}
-function readForm() {
-    return {
-        title: titleInput.value.trim(),
-        severity: severitySelect.value,
-        status: statusSelect.value,
-        description: descriptionInput.value.trim(),
-        reporter: reporterInput.value.trim() 
-    };
-}
-function validate(data) {
-    clearErrors();
-    let ok = true;
-    if (!data.title) { setError(titleError, "Назва обов’язкова."); markInvalid(titleInput, true); ok = false; }
-    if (!data.severity) { setError(severityError, "Оберіть критичність."); markInvalid(severitySelect, true); ok = false; }
-    if (!data.status) { setError(statusError, "Оберіть статус."); markInvalid(statusSelect, true); ok = false; }
-    if (!data.description) { setError(descriptionError, "Опис обов’язковий."); markInvalid(descriptionInput, true); ok = false; }
-    if (!data.reporter) { setError(reporterError, "Вкажіть автора."); markInvalid(reporterInput, true); ok = false; }
-    return ok;
-}
-function clearForm() {
-    form.reset();
-    editIdInput.value = "";
-    submitBtn.textContent = "Додати";
-    clearErrors();
-}
-async function loadReports() {
-    const res = await fetch(API_URL);
-    state.reports = await res.json();
-    render();
-}
+
+// 2. Додавання звіту
 async function addReport(data) {
-    await fetch(USERS_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: data.reporter })
-    });
-    const res = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-    });
-    const saved = await res.json();
-    state.reports.push(saved);
-}
-async function updateReport(id, data) {
-    const res = await fetch(`${API_URL}/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-    });
-    const updated = await res.json();
-    const idx = state.reports.findIndex(r => r.id === id);
-    if (idx !== -1) state.reports[idx] = updated;
-}
-async function deleteReport(id) {
-    await fetch(`${API_URL}/${id}`, { method: "DELETE" });
-    state.reports = state.reports.filter(r => r.id !== id);
-}
-function getView() {
-    let arr = [...state.reports];
-    const q = state.search.toLowerCase();
-    if (q) {
-        arr = arr.filter(r => r.title.toLowerCase().includes(q) || r.reporter.toLowerCase().includes(q));
+    try {
+        // ФІКС: Відправляємо title і name одночасно, щоб догодити валідатору на бекенді
+        const reportData = {
+            title: data.title,       
+            name: data.title,        // Додано як дублікат, якщо бекенд шукає "name"
+            severity: data.severity,
+            status: data.status,
+            description: data.description,
+            reporter_id: data.reporter,
+            createdAt: new Date().toISOString()
+        };
+
+        const res = await fetch(BASE_REPORTS_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(reportData)
+        });
+
+        const result = await res.json();
+
+        if (!res.ok) {
+            // Виводимо конкретну помилку з сервера (наприклад, "Назва обов'язкова")
+            alert("Сервер відхилив запит: " + (result.message || "Невідома помилка"));
+            return false;
+        }
+
+        await loadReports();
+        return true; 
+    } catch (err) {
+        console.error("Критична помилка при додаванні:", err);
+        return false;
     }
-    if (state.statusFilter) arr = arr.filter(r => r.status === state.statusFilter);
-    if (state.sevFilter) arr = arr.filter(r => r.severity === state.sevFilter);
-    if (state.sort === "severityDesc") arr.sort((a, b) => severityRank[b.severity] - severityRank[a.severity]);
-    else if (state.sort === "severityAsc") arr.sort((a, b) => severityRank[a.severity] - severityRank[b.severity]);
-    else if (state.sort === "titleAsc") arr.sort((a, b) => a.title.localeCompare(b.title, "uk"));
-    else if (state.sort === "titleDesc") arr.sort((a, b) => b.title.localeCompare(a.title, "uk"));
-    return arr;
 }
+
+// 3. Оновлення
+async function updateReport(id, data) {
+    try {
+        const res = await fetch(`${BASE_REPORTS_URL}/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                title: data.title,
+                name: data.title,
+                severity: data.severity,
+                status: data.status,
+                description: data.description,
+                reporter_id: data.reporter
+            })
+        });
+        if (res.ok) {
+            await loadReports();
+            return true;
+        }
+        return false;
+    } catch (err) { console.error(err); return false; }
+}
+
+// 4. Видалення
+async function deleteReport(id) {
+    try {
+        const res = await fetch(`${BASE_REPORTS_URL}/${id}`, { method: "DELETE" });
+        if (res.ok) await loadReports();
+    } catch (err) { console.error(err); }
+}
+
+// 5. Рендеринг
+function escapeHtml(s) {
+    if (!s) return "";
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 function render() {
     const view = getView();
+    if (!tbody) return;
+
+    if (view.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px;">Дані відсутні або зафільтровані</td></tr>`;
+        return;
+    }
+
     tbody.innerHTML = view.map(r => `
         <tr data-id="${r.id}">
-            <td>${escapeHtml(r.title)}</td>
-            <td>${escapeHtml(r.severity)}</td>
+            <td>${escapeHtml(r.title || r.name)}</td>
+            <td><span class="badge-${r.severity}">${escapeHtml(r.severity)}</span></td>
             <td>${escapeHtml(r.status)}</td>
             <td>${escapeHtml(r.description)}</td>
-            <td>${escapeHtml(r.reporter)}</td>
+            <td><strong>${escapeHtml(r.authorName || r.reporter_id)}</strong></td>
             <td>
-                <button type="button" class="editBtn">Редагувати</button>
+                <button type="button" class="editBtn">Редавати</button>
                 <button type="button" class="deleteBtn">Видалити</button>
             </td>
         </tr>`).join("");
 }
+
+function getView() {
+    let arr = [...state.reports];
+    const q = state.search.toLowerCase();
+    
+    if (q) {
+        arr = arr.filter(r => 
+            (r.title && r.title.toLowerCase().includes(q)) || 
+            (r.name && r.name.toLowerCase().includes(q)) ||
+            (r.authorName && r.authorName.toLowerCase().includes(q))
+        );
+    }
+    
+    if (state.statusFilter) arr = arr.filter(r => r.status === state.statusFilter);
+    if (state.sevFilter) arr = arr.filter(r => r.severity === state.sevFilter);
+    
+    if (state.sort && state.sort.includes("severity")) {
+        arr.sort((a, b) => {
+            const val = (severityRank[a.severity] || 0) - (severityRank[b.severity] || 0);
+            return state.sort === "severityAsc" ? val : -val;
+        });
+    }
+    return arr;
+}
+
+// 6. Слухачі
 form.addEventListener("submit", async e => {
     e.preventDefault();
-    const data = readForm();
-    if (!validate(data)) return;
+    
+    const data = {
+        title: titleInput.value.trim(),
+        severity: severitySelect.value,
+        status: statusSelect.value,
+        description: descriptionInput.value.trim(),
+        reporter: reporterInput.value.trim()
+    };
+    
+    if (!data.title || !data.reporter) {
+        alert("Заповніть назву та ID автора (наприклад, u1)");
+        return;
+    }
+
     const editId = editIdInput.value;
-    if (editId) await updateReport(editId, data);
-    else await addReport(data);
-    render();
-    clearForm();
+    let success = false;
+
+    if (editId) {
+        success = await updateReport(editId, data);
+    } else {
+        success = await addReport(data);
+    }
+    
+    if (success) {
+        form.reset();
+        editIdInput.value = "";
+        submitBtn.textContent = "Додати";
+    }
 });
+
 tbody.addEventListener("click", async e => {
     const btn = e.target.closest("button");
     if (!btn) return;
-    const id = btn.closest("tr").dataset.id;
+    const tr = btn.closest("tr");
+    const id = tr.dataset.id;
+
     if (btn.classList.contains("deleteBtn")) {
-        if (confirm("Видалити?")) { await deleteReport(id); render(); }
+        if (confirm("Видалити цей звіт?")) await deleteReport(id);
     }
+
     if (btn.classList.contains("editBtn")) {
-        const r = state.reports.find(rep => rep.id === id);
-        titleInput.value = r.title;
-        severitySelect.value = r.severity;
-        statusSelect.value = r.status;
-        descriptionInput.value = r.description;
-        reporterInput.value = r.reporter;
-        editIdInput.value = r.id;
-        submitBtn.textContent = "Зберегти";
+        const r = state.reports.find(rep => String(rep.id) === String(id));
+        if (r) {
+            titleInput.value = r.title || r.name || "";
+            severitySelect.value = r.severity;
+            statusSelect.value = r.status;
+            descriptionInput.value = r.description;
+            reporterInput.value = r.reporter_id;
+            editIdInput.value = r.id;
+            submitBtn.textContent = "Зберегти зміни";
+            window.scrollTo(0, 0);
+        }
     }
 });
+
 function syncFilters() {
     state.search = searchInput.value.trim();
     state.statusFilter = filterStatus.value;
@@ -161,13 +229,9 @@ function syncFilters() {
     state.sort = sortSelect.value;
     render();
 }
+
 [searchInput, filterStatus, filterSeverity, sortSelect].forEach(el => {
-    el.addEventListener(el.id === "searchInput" ? "input" : "change", syncFilters);
+    if (el) el.addEventListener(el.id === "searchInput" ? "input" : "change", syncFilters);
 });
-clearFiltersBtn.addEventListener("click", () => {
-    searchInput.value = ""; filterStatus.value = ""; filterSeverity.value = ""; sortSelect.value = "";
-    syncFilters();
-});
-clearBtn.addEventListener("click", clearForm);
 loadReports();
-loadUsers();  
+loadUsers();

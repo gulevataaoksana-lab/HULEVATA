@@ -1,64 +1,100 @@
 ﻿import { Request, Response, NextFunction } from 'express';
 import * as service from '../services/dataService';
-import { CreateReportDto, UpdateReportDto } from '../dtos/Report';
+import { formatResponse, isEmpty } from '../utils/Utilities';
 import { AppError } from '../errors/AppError';
-export function getReports(req: Request, res: Response, next: NextFunction) {
-    try {
-        const reports = service.getAllReports();
-        res.status(200).json(reports);
+export async function getReports(req: Request, res: Response, next: NextFunction) {
+    try { 
+        let reports = await service.getAllReports() as any[]; 
+        const statusFilter = req.query.status as string;
+        if (statusFilter) {
+            reports = reports.filter((r) => r.status === statusFilter);
+        }
+        const sortBy = req.query.sort as string;
+        if (sortBy === 'title') {
+            reports = reports.sort((a, b) => a.title.localeCompare(b.title, 'uk'));
+        }
+        res.status(200).json(formatResponse(reports, 'Список успішно отримано'));
     } catch (error) {
         next(error);
     }
 }
-export function createReport(req: Request, res: Response, next: NextFunction) {
+export async function getReportById(req: Request, res: Response, next: NextFunction) {
     try {
-        const body: CreateReportDto = req.body;
-        if (!body || Object.keys(body).length === 0) {
-            throw new AppError('Тіло запиту порожнє (Invalid JSON)', 400);
+        const id = req.params.id;
+        const result = await service.getReportById(id);
+        if (!result || (Array.isArray(result) && result.length === 0)) {
+            throw new AppError('Запис не знайдено', 404);
         }
-        if (!body.title || body.title.length < 3) {
-            throw new AppError('Назва звіту (title) обов’язкова і має бути не менше 3 символів', 400);
-        }
-        if (!body.severity) {
-            throw new AppError('Рівень критичності (severity) обов’язковий', 400);
-        }
-        if (!body.status) {
-            throw new AppError('Статус обов’язковий', 400);
-        }
-        if (!body.reporter) {
-            throw new AppError('Автор звіту (reporter) обов’язковий', 400);
-        }
-        const report = service.createReport(body);
-        res.status(201).json(report);
+        const data = Array.isArray(result) ? result[0] : result;
+        res.status(200).json(formatResponse(data, 'Запис знайдено'));
     } catch (error) {
         next(error);
     }
 }
-export function updateReport(req: Request, res: Response, next: NextFunction) {
+export async function exportReports(req: Request, res: Response, next: NextFunction) {
     try {
-        const id = req.params.id as string;
-        const body: UpdateReportDto = req.body;
-        const existingReport = service.getAllReports().find(r => r.id === id);
-        if (!existingReport) {
-            throw new AppError(`Ресурс із ID ${id} не знайдено`, 404);
-        }
-        if (body.title && body.title.length < 3) {
-            throw new AppError('Нова назва занадто коротка', 400);
-        }
-        const updated = service.updateReport(id, body);
-        res.status(200).json(updated);
+        const status = req.query.status as string;
+        const sort = req.query.sort as string;
+        const limit = req.query.limit ? Number(req.query.limit) : undefined;
+        const data = await service.exportReports({ status, sort, limit });
+        res.status(200).json(formatResponse(data, 'Дані експортовано'));
     } catch (error) {
         next(error);
     }
 }
-export function deleteReport(req: Request, res: Response, next: NextFunction) {
+export async function importReports(req: Request, res: Response, next: NextFunction) {
     try {
-        const id = req.params.id as string;
-        const success = service.deleteReport(id);
-        if (!success) {
-            throw new AppError('Помилка видалення: об’єкт не знайдено за вказаним ID', 404);
+        const payload = req.body;
+        if (!payload || !Array.isArray(payload.reports)) {
+            throw new AppError('Поле reports має бути масивом', 400);
         }
-        res.status(204).send();
+        const result = await service.importReports(payload.reports);
+        res.status(201).json(formatResponse(result, 'Дані імпортовано'));
+    } catch (error) {
+        next(error);
+    }
+}
+export async function createReport(req: Request, res: Response, next: NextFunction) {
+    try {
+        const body = req.body;
+        const validStatuses = ['Новий', 'У процесі', 'Виправлено', 'Відхилено'];
+        const reporterId = body?.reporter_id || body?.reporter;
+        if (!body || isEmpty(body.title) || isEmpty(body.severity) || isEmpty(reporterId)) {
+            throw new AppError('Назва, критичність та автор обов’язкові', 400);
+        }
+        if (!body.status || !validStatuses.includes(body.status)) {
+            throw new AppError('Неправильний статус звіту', 400);
+        }
+        body.reporter_id = reporterId;
+        const report = await service.createReport(body);
+        res.status(201).json(formatResponse(report, 'Запис створено'));
+    } catch (error) {
+        next(error);
+    }
+}
+export async function updateReport(req: Request, res: Response, next: NextFunction) {
+    try {
+        const id = req.params.id;
+        const validStatuses = ['Новий', 'У процесі', 'Виправлено', 'Відхилено'];
+        if (req.body.status && !validStatuses.includes(req.body.status)) {
+            throw new AppError('Неправильний статус звіту', 400);
+        }
+        const reporterId = req.body?.reporter_id || req.body?.reporter;
+        if (reporterId) {
+            req.body.reporter_id = reporterId;
+        }
+        const updated = await service.updateReport(id, req.body);
+        if (!updated) throw new AppError('Не вдалося оновити', 404);
+        res.status(200).json(formatResponse(updated, 'Дані оновлено'));
+    } catch (error) {
+        next(error);
+    }
+}
+export async function deleteReport(req: Request, res: Response, next: NextFunction) {
+    try {
+        const success = await service.deleteReport(req.params.id);
+        if (!success) throw new AppError('Запис не знайдено', 404);
+        res.status(200).json(formatResponse(null, 'Запис видалено'));
     } catch (error) {
         next(error);
     }

@@ -1,14 +1,8 @@
-﻿import express from 'express';
-import * as controller from '../controllers/dataController';
-const router = express.Router();
+import { Router } from 'express';
+import * as controller from '../controllers/itemController';
+const router = Router();
 router.get('/', function(req, res, next) {
     controller.getReports(req, res, next);
-});
-router.get('/export', function(req, res, next) {
-    controller.exportReports(req, res, next);
-});
-router.post('/import', function(req, res, next) {
-    controller.importReports(req, res, next);
 });
 router.get('/:id', function(req, res, next) {
     controller.getReportById(req, res, next);
@@ -22,4 +16,4 @@ router.put('/:id', function(req, res, next) {
 router.delete('/:id', function(req, res, next) {
     controller.deleteReport(req, res, next);
 });
-export default router; 
+export default router;
