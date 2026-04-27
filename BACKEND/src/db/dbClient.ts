@@ -9,7 +9,7 @@ if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
 export const db = new sqlite3.Database(dbPath);
 db.run("PRAGMA foreign_keys = ON");
 
-export function dbAll(sql: string, params: any[] = []): Promise<any[]> {
+export function dbAll(sql: string, params: (string | number | null)[] = []): Promise<any[]> {
     return new Promise(function(resolve, reject) {
         db.all(sql, params, function(err, rows) {
             if (err) reject(err);
@@ -17,7 +17,7 @@ export function dbAll(sql: string, params: any[] = []): Promise<any[]> {
         });
     });
 }
-export function dbRun(sql: string, params: any[] = []): Promise<{ id: number; changes: number }> {
+export function dbRun(sql: string, params: (string | number | null)[] = []): Promise<{ id: number; changes: number }> {
     return new Promise(function(resolve, reject) {
         db.run(sql, params, function(this: any, err: Error | null) {
             if (err) reject(err);

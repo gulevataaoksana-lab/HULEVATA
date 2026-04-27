@@ -38,11 +38,14 @@ export async function createStatus(req: Request, res: Response, next: NextFuncti
 export async function updateStatus(req: Request, res: Response, next: NextFunction) {
     try {
         const id = req.params.id;
-        const name = req.body.name;  
+        const name = req.body.name;
+        const description = req.body.description;
+        
         if (isEmpty(name)) {
             throw new AppError('Нова назва не може бути порожньою', 400);
         }
-        const updated = await service.updateStatus(id, name);
+        
+        const updated = await service.updateStatus(id, name, description);
         res.status(200).json(formatResponse(updated, 'Статус оновлено'));
     } catch (error) {
         next(error);

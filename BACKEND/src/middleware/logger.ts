@@ -1,6 +1,14 @@
 ﻿import { Request, Response, NextFunction } from 'express';
+
 function logger(req: Request, res: Response, next: NextFunction) {
-    console.log(req.method + ' ' + req.url);
+    const start = Date.now();
+
+    res.on('finish', () => {
+        const duration = Date.now() - start;
+        console.log(`${req.method} ${req.url} ${res.statusCode} ${duration}ms`);
+    });
+
     next();
 }
+
 export default logger;

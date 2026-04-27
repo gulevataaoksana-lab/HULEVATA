@@ -1,237 +1,212 @@
-const API_URL = "http://localhost:3000/api/reports-full";
-const USERS_URL = "http://localhost:3000/api/users";
-const BASE_REPORTS_URL = "http://localhost:3000/api/reports";
+const BASE_URL = "http://localhost:3000/api/v1";
 
-const severityRank = { "Низький": 1, "Середній": 2, "Високий": 3, "Критичний": 4 };
+const severityRank = { 
+    "Низький": 1, 
+    "Середній": 2, 
+    "Високий": 3, 
+    "Критичний": 4 
+};
 
-const form = document.getElementById("reportForm");
-const titleInput = document.getElementById("title");
-const severitySelect = document.getElementById("severity");
-const statusSelect = document.getElementById("status");
-const descriptionInput = document.getElementById("description");
-const reporterInput = document.getElementById("reporter");
-const editIdInput = document.getElementById("editId");
-const submitBtn = document.getElementById("submitBtn");
-const tbody = document.getElementById("reportsTableBody");
+let state = { 
+    reports: [], 
+    users: [], 
+    statuses: [], 
+    search: "", 
+    statusFilter: "", 
+    sevFilter: "",
+    sortOrder: "" 
+};
 
-const searchInput = document.getElementById("searchInput");
-const filterStatus = document.getElementById("filterStatus");
-const filterSeverity = document.getElementById("filterSeverity");
-const sortSelect = document.getElementById("sortSelect");
-
-let state = { reports: [], users: [], search: "", statusFilter: "", sevFilter: "", sort: "" };
-
-// 1. Завантаження даних
-async function loadReports() {
-    try {
-        const res = await fetch(API_URL);
-        const json = await res.json();
-        console.log("Дані з сервера:", json.data);
-        state.reports = json.data || [];
-        render();
-    } catch (err) {
-        console.error("Помилка завантаження звітів:", err);
+async function loadAllData() {
+    const tableBody = document.getElementById("reportsTableBody");
+    if (tableBody) {
+        tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Завантаження...</td></tr>';
     }
-}
 
-async function loadUsers() {
     try {
-        const res = await fetch(USERS_URL);
-        const json = await res.json();
-        state.users = json.data || [];
-    } catch (err) {
-        console.error("Помилка завантаження користувачів:", err);
-    }
-}
+        const [repRes, usrRes, stsRes] = await Promise.all([
+            fetch(`${BASE_URL}/reports`),
+            fetch(`${BASE_URL}/users`),
+            fetch(`${BASE_URL}/statuses`)
+        ]);
 
-// 2. Додавання звіту
-async function addReport(data) {
-    try {
-        // ФІКС: Відправляємо title і name одночасно, щоб догодити валідатору на бекенді
-        const reportData = {
-            title: data.title,       
-            name: data.title,        // Додано як дублікат, якщо бекенд шукає "name"
-            severity: data.severity,
-            status: data.status,
-            description: data.description,
-            reporter_id: data.reporter,
-            createdAt: new Date().toISOString()
-        };
-
-        const res = await fetch(BASE_REPORTS_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(reportData)
-        });
-
-        const result = await res.json();
-
-        if (!res.ok) {
-            // Виводимо конкретну помилку з сервера (наприклад, "Назва обов'язкова")
-            alert("Сервер відхилив запит: " + (result.message || "Невідома помилка"));
-            return false;
+        if (!repRes.ok || !usrRes.ok || !stsRes.ok) {
+            throw new Error(`Помилка завантаження даних`);
         }
 
-        await loadReports();
-        return true; 
+        const repData = await repRes.json();
+        const usrData = await usrRes.json();
+        const stsData = await stsRes.json();
+
+        state.reports = repData.data || [];
+        state.users = usrData.data || [];
+        state.statuses = stsData.data || [];
+
+        updateSelectors();
+        renderAll();
+
     } catch (err) {
-        console.error("Критична помилка при додаванні:", err);
-        return false;
-    }
-}
-
-// 3. Оновлення
-async function updateReport(id, data) {
-    try {
-        const res = await fetch(`${BASE_REPORTS_URL}/${id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                title: data.title,
-                name: data.title,
-                severity: data.severity,
-                status: data.status,
-                description: data.description,
-                reporter_id: data.reporter
-            })
-        });
-        if (res.ok) {
-            await loadReports();
-            return true;
+        if (tableBody) {
+            tableBody.innerHTML = `<tr><td colspan="6" style="color:red;">Помилка: ${err.message}</td></tr>`;
         }
-        return false;
-    } catch (err) { console.error(err); return false; }
+        console.error("Помилка:", err);
+    }
 }
 
-// 4. Видалення
-async function deleteReport(id) {
-    try {
-        const res = await fetch(`${BASE_REPORTS_URL}/${id}`, { method: "DELETE" });
-        if (res.ok) await loadReports();
-    } catch (err) { console.error(err); }
-}
+function renderAll() {
+    
+    let filteredReports = [...state.reports].filter(r => {
+        const title = (r.title || "").toLowerCase();
+        
+        const userObj = state.users.find(u => u.id == r.reporter_id);
+        const author = (r.authorName || (userObj ? userObj.name : "")).toLowerCase();
+        
+        const s = state.search.toLowerCase();
+        return (title.includes(s) || author.includes(s)) &&
+               (!state.statusFilter || String(r.status_id) === state.statusFilter) &&
+               (!state.sevFilter || r.severity === state.sevFilter);
+    });
 
-// 5. Рендеринг
-function escapeHtml(s) {
-    if (!s) return "";
-    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
+    if (state.sortOrder === "asc") filteredReports.sort((a, b) => severityRank[a.severity] - severityRank[b.severity]);
+    if (state.sortOrder === "desc") filteredReports.sort((a, b) => severityRank[b.severity] - severityRank[a.severity]);
 
-function render() {
-    const view = getView();
-    if (!tbody) return;
+    const reportsHtml = filteredReports.map(r => {
+        
+        const user = state.users.find(u => u.id == r.reporter_id);
+        const displayName = r.authorName || (user ? user.name : "Невідомий");
 
-    if (view.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px;">Дані відсутні або зафільтровані</td></tr>`;
-        return;
+        return `
+            <tr>
+                <td>${r.title}</td>
+                <td>${r.severity}</td>
+                <td>${r.status_name || "Новий"}</td>
+                <td>${r.description || "-"}</td>
+                <td>${displayName}</td>
+                <td>
+                    <button onclick="window.editReport(${r.id})">Редагувати</button>
+                    <button onclick="window.deleteReport(${r.id})">Видалити</button>
+                </td>
+            </tr>
+        `;
+    }).join("");
+    
+    const reportsTable = document.getElementById("reportsTableBody");
+    if (reportsTable) reportsTable.innerHTML = reportsHtml || '<tr><td colspan="6">Звітів не знайдено</td></tr>';
+
+  
+    const usersTable = document.getElementById("usersTableBody");
+    if (usersTable) {
+        usersTable.innerHTML = state.users.map(u => `
+            <tr>
+                <td>${u.id}</td>
+                <td>${u.name}</td>
+                <td><button onclick="window.deleteUser('${u.id}')">Видалити</button></td>
+            </tr>
+        `).join("");
     }
 
-    tbody.innerHTML = view.map(r => `
-        <tr data-id="${r.id}">
-            <td>${escapeHtml(r.title || r.name)}</td>
-            <td><span class="badge-${r.severity}">${escapeHtml(r.severity)}</span></td>
-            <td>${escapeHtml(r.status)}</td>
-            <td>${escapeHtml(r.description)}</td>
-            <td><strong>${escapeHtml(r.authorName || r.reporter_id)}</strong></td>
-            <td>
-                <button type="button" class="editBtn">Редавати</button>
-                <button type="button" class="deleteBtn">Видалити</button>
-            </td>
-        </tr>`).join("");
+    
+    const statusesTable = document.getElementById("statusesTableBody");
+    if (statusesTable) {
+        statusesTable.innerHTML = state.statuses.map(s => `
+            <tr>
+                <td>${s.id}</td>
+                <td>${s.name}</td>
+                <td>${s.description || "-"}</td>
+                <td><button onclick="window.deleteStatus(${s.id})">Видалити</button></td>
+            </tr>
+        `).join("");
+    }
 }
 
-function getView() {
-    let arr = [...state.reports];
-    const q = state.search.toLowerCase();
-    
-    if (q) {
-        arr = arr.filter(r => 
-            (r.title && r.title.toLowerCase().includes(q)) || 
-            (r.name && r.name.toLowerCase().includes(q)) ||
-            (r.authorName && r.authorName.toLowerCase().includes(q))
-        );
-    }
-    
-    if (state.statusFilter) arr = arr.filter(r => r.status === state.statusFilter);
-    if (state.sevFilter) arr = arr.filter(r => r.severity === state.sevFilter);
-    
-    if (state.sort && state.sort.includes("severity")) {
-        arr.sort((a, b) => {
-            const val = (severityRank[a.severity] || 0) - (severityRank[b.severity] || 0);
-            return state.sort === "severityAsc" ? val : -val;
-        });
-    }
-    return arr;
-}
 
-// 6. Слухачі
-form.addEventListener("submit", async e => {
-    e.preventDefault();
-    
-    const data = {
-        title: titleInput.value.trim(),
-        severity: severitySelect.value,
-        status: statusSelect.value,
-        description: descriptionInput.value.trim(),
-        reporter: reporterInput.value.trim()
+const reportForm = document.getElementById("reportForm");
+if (reportForm) {
+    reportForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const editId = document.getElementById("editId").value;
+        const uId = document.getElementById("userId").value;
+        const uName = document.getElementById("userName").value;
+
+        try {
+            
+            if (!editId && uId && uName) {
+                await fetch(`${BASE_URL}/users`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id: uId, name: uName })
+                });
+            }
+
+            const reportData = {
+                title: document.getElementById("title").value,
+                severity: document.getElementById("severity").value,
+                status_id: parseInt(document.getElementById("status").value),
+                description: document.getElementById("description").value,
+                reporter_id: uId
+            };
+
+            const url = editId ? `${BASE_URL}/reports/${editId}` : `${BASE_URL}/reports`;
+            await fetch(url, {
+                method: editId ? "PUT" : "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(reportData)
+            });
+
+            reportForm.reset();
+            document.getElementById("editId").value = "";
+            document.getElementById("submitBtn").textContent = "Додати";
+            await loadAllData();
+        } catch (err) { 
+            console.error("Помилка форми:", err); 
+        }
     };
-    
-    if (!data.title || !data.reporter) {
-        alert("Заповніть назву та ID автора (наприклад, u1)");
-        return;
-    }
-
-    const editId = editIdInput.value;
-    let success = false;
-
-    if (editId) {
-        success = await updateReport(editId, data);
-    } else {
-        success = await addReport(data);
-    }
-    
-    if (success) {
-        form.reset();
-        editIdInput.value = "";
-        submitBtn.textContent = "Додати";
-    }
-});
-
-tbody.addEventListener("click", async e => {
-    const btn = e.target.closest("button");
-    if (!btn) return;
-    const tr = btn.closest("tr");
-    const id = tr.dataset.id;
-
-    if (btn.classList.contains("deleteBtn")) {
-        if (confirm("Видалити цей звіт?")) await deleteReport(id);
-    }
-
-    if (btn.classList.contains("editBtn")) {
-        const r = state.reports.find(rep => String(rep.id) === String(id));
-        if (r) {
-            titleInput.value = r.title || r.name || "";
-            severitySelect.value = r.severity;
-            statusSelect.value = r.status;
-            descriptionInput.value = r.description;
-            reporterInput.value = r.reporter_id;
-            editIdInput.value = r.id;
-            submitBtn.textContent = "Зберегти зміни";
-            window.scrollTo(0, 0);
-        }
-    }
-});
-
-function syncFilters() {
-    state.search = searchInput.value.trim();
-    state.statusFilter = filterStatus.value;
-    state.sevFilter = filterSeverity.value;
-    state.sort = sortSelect.value;
-    render();
 }
 
-[searchInput, filterStatus, filterSeverity, sortSelect].forEach(el => {
-    if (el) el.addEventListener(el.id === "searchInput" ? "input" : "change", syncFilters);
+
+window.editReport = (id) => {
+    const r = state.reports.find(item => item.id == id);
+    if (!r) return;
+    document.getElementById("editId").value = r.id;
+    document.getElementById("title").value = r.title;
+    document.getElementById("severity").value = r.severity;
+    document.getElementById("status").value = r.status_id;
+    document.getElementById("description").value = r.description || "";
+    document.getElementById("userId").value = r.reporter_id || "";
+    
+    const user = state.users.find(u => u.id == r.reporter_id);
+    document.getElementById("userName").value = r.authorName || (user ? user.name : "");
+    
+    document.getElementById("submitBtn").textContent = "Зберегти зміни";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+};
+
+window.deleteReport = async (id) => { if (confirm("Видалити звіт?")) { await fetch(`${BASE_URL}/reports/${id}`, { method: "DELETE" }); await loadAllData(); } };
+window.deleteUser = async (id) => { if (confirm("Видалити користувача?")) { await fetch(`${BASE_URL}/users/${id}`, { method: "DELETE" }); await loadAllData(); } };
+window.deleteStatus = async (id) => { if (confirm("Видалити статус?")) { await fetch(`${BASE_URL}/statuses/${id}`, { method: "DELETE" }); await loadAllData(); } };
+
+
+const bind = (id, evt, fn) => document.getElementById(id)?.addEventListener(evt, fn);
+bind("searchInput", "input", (e) => { state.search = e.target.value; renderAll(); });
+bind("filterStatus", "change", (e) => { state.statusFilter = e.target.value; renderAll(); });
+bind("filterSeverity", "change", (e) => { state.sevFilter = e.target.value; renderAll(); });
+bind("sortSelect", "change", (e) => { state.sortOrder = e.target.value; renderAll(); });
+bind("resetFilters", "click", () => {
+    state.search = ""; state.statusFilter = ""; state.sevFilter = ""; state.sortOrder = "";
+    ["searchInput", "filterStatus", "filterSeverity", "sortSelect"].forEach(id => { 
+        const el = document.getElementById(id);
+        if (el) el.value = ""; 
+    });
+    renderAll();
 });
-loadReports();
-loadUsers();
+
+function updateSelectors() {
+    const stsOpts = state.statuses.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
+    const fSts = document.getElementById("filterStatus");
+    if (fSts) fSts.innerHTML = '<option value="">Статус (усі)</option>' + stsOpts;
+    const sSts = document.getElementById("status");
+    if (sSts) sSts.innerHTML = '<option value="">Оберіть статус</option>' + stsOpts;
+}
+
+
+loadAllData();

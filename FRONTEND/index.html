@@ -9,16 +9,12 @@
 </head>
 <body>
   <header class="page-header">
-    <div class="topbar">
-      <input type="text" id="searchInput" placeholder="Пошук..." />
-    </div>
+  <div class="topbar">
+    <input type="text" id="searchInput" placeholder="Пошук за назвою або автором..." />
+
     <div class="top-toolbar">
       <select id="filterStatus">
         <option value="">Статус (усі)</option>
-        <option value="Новий">Новий</option>
-        <option value="У процесі">У процесі</option>
-        <option value="Виправлено">Виправлено</option>
-        <option value="Відхилено">Відхилено</option>
       </select>
       <select id="filterSeverity">
         <option value="">Критичність (усі)</option>
@@ -27,81 +23,106 @@
         <option value="Високий">Високий</option>
         <option value="Критичний">Критичний</option>
       </select>
-      <select id="sortSelect">
-        <option value="">Сортування</option>
-        <option value="severityDesc">Критичність (від більшого до меншого)</option>
-        <option value="severityAsc">Критичність (від меншого до більшого)</option>
-        <option value="titleAsc">Назва (від А до Я)</option>
-        <option value="titleDesc">Назва (від Я до А)</option>
-      </select>
-      <button id="clearFiltersBtn" type="button">Скинути</button>
+      <button id="resetFilters" type="button">Скинути фільтри</button>
     </div>
-    <h1>ЛР1 — Варіант 6: Репорт вразливості</h1>
-  </header>
+  </div>
+  <h1>ЛР1 — Варіант 6: Репорт вразливості</h1>
+</header>
   <main class="app">
     <section class="panel form-panel">
       <h2>Форма</h2>
       <form id="reportForm" novalidate>
         <div class="field">
-          <label for="title">Назва</label>
-          <input type="text" id="title" />
-          <div id="titleError" class="error-text"></div>
+          <label for="userId">ID</label>
+          <input type="text" id="userId" placeholder=" " required />
+        </div>
+        <div class="field">
+          <label for="userName">Ім'я автора</label>
+          <input type="text" id="userName" placeholder=" " required />
+        </div>
+
+        <div class="field">
+          <label for="title">Назва вразливості</label>
+          <input type="text" id="title" required />
         </div>
         <div class="field">
           <label for="severity">Критичність</label>
           <select id="severity">
-            <option value="">Оберіть</option>
+            <option value="">Оберіть критичність</option>
             <option value="Низький">Низький</option>
             <option value="Середній">Середній</option>
             <option value="Високий">Високий</option>
             <option value="Критичний">Критичний</option>
           </select>
-          <div id="severityError" class="error-text"></div>
         </div>
         <div class="field">
           <label for="status">Статус</label>
           <select id="status">
-            <option value="">Оберіть</option>
-            <option value="Новий">Новий</option>
-            <option value="У процесі">У процесі</option>
-            <option value="Виправлено">Виправлено</option>
-            <option value="Відхилено">Відхилено</option>
+             <option value="">Оберіть статус</option>
           </select>
-          <div id="statusError" class="error-text"></div>
         </div>
         <div class="field">
           <label for="description">Опис</label>
           <textarea id="description" rows="4"></textarea>
-          <div id="descriptionError" class="error-text"></div>
         </div>
-        <div class="field">
-          <label for="reporter">Автор</label>
-          <input type="text" id="reporter" />
-          <div id="reporterError" class="error-text"></div>
-        </div>
+
         <div class="actions">
           <button id="submitBtn" type="submit">Додати</button>
-          <button id="clearBtn" type="button">Очистити</button>
+          <button id="clearBtn" type="button" onclick="this.form.reset()">Очистити</button>
         </div>
         <input type="hidden" id="editId" />
       </form>
     </section>
-    <section class="panel list-panel">
-      <h2>Список</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Назва</th>
-            <th>Критичність</th>
-            <th>Статус</th>
-            <th>Опис</th>
-            <th>Автор</th>
-            <th>Дії</th>
-          </tr>
-        </thead>
-        <tbody id="reportsTableBody"></tbody>
-      </table>
-    </section>
+
+    <div class="tables-column">
+      <section class="panel list-panel">
+        <h2>Користувачі</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Ім'я</th>
+              <th>Дії</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody"></tbody>
+        </table>
+      </section>
+
+      <section class="panel list-panel">
+        <h2>Статуси</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Назва</th>
+              <th>Опис</th>
+              <th>Дії</th>
+            </tr>
+          </thead>
+          <tbody id="statusesTableBody"></tbody>
+        </table>
+      </section>
+
+      <section class="panel list-panel">
+        <h2>Список звітів</h2>
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Назва</th>
+                <th>Критичність</th>
+                <th>Статус</th>
+                <th>Опис</th>
+                <th>Автор</th>
+                <th>Дії</th>
+              </tr>
+            </thead>
+            <tbody id="reportsTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
   </main>
 </body>
 </html>

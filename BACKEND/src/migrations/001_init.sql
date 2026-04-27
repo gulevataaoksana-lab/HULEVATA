@@ -16,9 +16,10 @@ CREATE TABLE IF NOT EXISTS reports (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
     severity TEXT NOT NULL CHECK (severity IN ('Низький', 'Середній', 'Високий', 'Критичний')),
-    status TEXT NOT NULL CHECK (status IN ('Новий', 'У процесі', 'Виправлено', 'Відхилено')),
+    status_id INTEGER NOT NULL,
     description TEXT,
     reporter_id TEXT,
     createdAt DATETIME NOT NULL,
+    FOREIGN KEY (status_id) REFERENCES statuses(id) ON DELETE RESTRICT,
     FOREIGN KEY (reporter_id) REFERENCES users(id) ON DELETE SET NULL
 );

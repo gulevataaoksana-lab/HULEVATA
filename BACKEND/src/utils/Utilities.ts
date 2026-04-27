@@ -4,7 +4,7 @@ export function isEmpty(value: string | undefined | null): boolean {
 export function isValidId(id: string): boolean {
     return id.length > 0;
 }
-export function formatResponse(data: any, message: string = 'Success') {
+export function formatResponse<T>(data: T, message: string = 'Success') {
     return {
         status: 'success',
         message: message,
