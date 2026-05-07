@@ -2,3 +2,7 @@
 /database.db
 /node_modules
 /dist
+dist/
+*.js
+*.map
+*.d.ts
