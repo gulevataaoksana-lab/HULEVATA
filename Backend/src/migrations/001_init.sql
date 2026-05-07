@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS reports (
     severity TEXT NOT NULL CHECK (severity IN ('Низький', 'Середній', 'Високий', 'Критичний')),
     status_id INTEGER NOT NULL,
     description TEXT,
+    authorName TEXT,
     reporter_id TEXT,
     createdAt DATETIME NOT NULL,
     FOREIGN KEY (status_id) REFERENCES statuses(id) ON DELETE RESTRICT,
