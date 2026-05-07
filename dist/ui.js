@@ -34,7 +34,7 @@ export function renderAll(filteredReports, statuses, users) {
     const tbody = document.getElementById("reportsTableBody");
     if (tbody) {
         if (filteredReports.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Дані відсутні (Empty State)</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Дані відсутні</td></tr>';
         }
         else {
             tbody.innerHTML = filteredReports.map(r => `
