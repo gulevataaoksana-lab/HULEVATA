@@ -3,7 +3,6 @@
  * @typedef {import('./types.js').User} User
  * @typedef {import('./types.js').Status} Status
  */
-
 export const state = {
     /** @type {Report[]} */
     reports: [],
@@ -11,7 +10,6 @@ export const state = {
     users: [],
     /** @type {Status[]} */
     statuses: [],
-    
     editingId: null,
     searchQuery: "",
     filterStatus: "",
@@ -19,24 +17,19 @@ export const state = {
     sortOrder: "",
     searchDebounce: null
 };
-
 export function getFilteredReports() {
     let filtered = [...state.reports];
-    
     if (state.searchQuery) {
         const q = state.searchQuery.toLowerCase();
         filtered = filtered.filter(r => r.title.toLowerCase().includes(q) ||
             (r.authorName && r.authorName.toLowerCase().includes(q)));
     }
-    
     if (state.filterStatus) {
         filtered = filtered.filter(r => r.status_id === parseInt(state.filterStatus));
     }
-    
     if (state.filterSeverity) {
         filtered = filtered.filter(r => r.severity === state.filterSeverity);
     }
-    
     if (state.sortOrder === "sevDesc") {
         const order = { "Критичний": 4, "Високий": 3, "Середній": 2, "Низький": 1 };
         filtered.sort((a, b) => (order[b.severity] || 0) - (order[a.severity] || 0));
@@ -52,6 +45,5 @@ export function getFilteredReports() {
             return dateB - dateA;
         });
     }
-    
     return filtered;
 }

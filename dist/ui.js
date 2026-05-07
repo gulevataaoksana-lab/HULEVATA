@@ -21,9 +21,8 @@ function escapeHtml(text) {
 }
 export function populateSelects(statuses) {
     const statusFilter = document.getElementById("filterStatus");
-    const statusForm = document.getElementById("status"); 
+    const statusForm = document.getElementById("status");
     const options = statuses.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-
     if (statusFilter) {
         statusFilter.innerHTML = '<option value="">Статус (усі)</option>' + options;
     }
@@ -34,22 +33,25 @@ export function populateSelects(statuses) {
 export function renderAll(filteredReports, statuses, users) {
     const tbody = document.getElementById("reportsTableBody");
     if (tbody) {
-        tbody.innerHTML = filteredReports.map(r => `
-            <tr data-id="${r.id}">
-                <td>${escapeHtml(r.title)}</td>
-                <td>${escapeHtml(r.severity)}</td>
-                <td>${escapeHtml(statuses.find(s => s.id === r.status_id)?.name || r.status_id.toString())}</td>
-                <td>${escapeHtml(r.description || '')}</td>
-                <td>${escapeHtml(r.authorName || 'Анонім')}</td>
-                <td>
-                    <button class="btn-edit" data-action="edit">Редагувати</button>
-                    <button class="btn-delete" data-action="delete">Видалити</button>
-                </td>
-            </tr>
-        `).join('');
+        if (filteredReports.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Дані відсутні (Empty State)</td></tr>';
+        }
+        else {
+            tbody.innerHTML = filteredReports.map(r => `
+                <tr data-id="${r.id}">
+                    <td>${escapeHtml(r.title)}</td>
+                    <td>${escapeHtml(r.severity)}</td>
+                    <td>${escapeHtml(statuses.find(s => s.id === r.status_id)?.name || r.status_id.toString())}</td>
+                    <td>${escapeHtml(r.description || '')}</td>
+                    <td>${escapeHtml(r.authorName || 'Анонім')}</td>
+                    <td>
+                        <button class="btn-edit" data-action="edit">Редагувати</button>
+                        <button class="btn-delete" data-action="delete">Видалити</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
     }
-    
-   
     const uBody = document.getElementById("usersTableBody");
     if (uBody) {
         uBody.innerHTML = users.map(u => `
@@ -61,12 +63,12 @@ export function renderAll(filteredReports, statuses, users) {
             </tr>
         `).join('');
     }
-
     const sBody = document.getElementById("statusesTableBody");
     if (sBody) {
         sBody.innerHTML = statuses.map(s => `
             <tr data-id="${s.id}"> <td>${s.id}</td>
                 <td>${escapeHtml(s.name)}</td>
+                <td>${escapeHtml(s.description || '')}</td>
                 <td>
                     <button class="btn-delete" data-action="delete">Видалити</button>
                 </td>
