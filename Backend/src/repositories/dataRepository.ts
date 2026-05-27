@@ -2,15 +2,23 @@
 import { Report, UpdateReportDto } from '../models/Report';
 
 
-export async function getReportsWithAuthors(): Promise<Report[]> {
-    const sql = `
+export async function getReportsWithAuthors(searchQuery?: string): Promise<Report[]> {
+    let sql = `
         SELECT r.*, s.name as status_name, u.name as authorName 
         FROM reports r 
         LEFT JOIN statuses s ON r.status_id = s.id 
-        LEFT JOIN users u ON r.reporter_id = u.id
-        ORDER BY r.createdAt DESC`;
+        LEFT JOIN users u ON r.reporter_id = u.id`;
+    
+    let params: any[] = [];
+    
+    if (searchQuery) {
+        sql += ` WHERE r.title LIKE ? OR u.name LIKE ?`;
+        params.push(`%${searchQuery}%`, `%${searchQuery}%`);
+    }
+    
+    sql += ` ORDER BY r.createdAt DESC`;
    
-    return await dbAll<Report>(sql);
+    return await dbAll<Report>(sql, params);
 }
 
 

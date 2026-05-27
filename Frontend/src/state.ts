@@ -34,8 +34,8 @@ export function getFilteredReports(): Report[] {
     }
     
     if (state.filterStatus) {
-        filtered = filtered.filter(r => r.status_id === parseInt(state.filterStatus));
-    }
+    filtered = filtered.filter(r => String(r.status_id) === String(state.filterStatus));
+}
     
     if (state.filterSeverity) {
         filtered = filtered.filter(r => r.severity === state.filterSeverity);
@@ -49,6 +49,12 @@ export function getFilteredReports(): Report[] {
         const order: Record<string, number> = { "Критичний": 4, "Високий": 3, "Середній": 2, "Низький": 1 };
         filtered.sort((a, b) => (order[a.severity] || 0) - (order[b.severity] || 0));
     }
-    
+    if (state.sortOrder === "status") {
+    filtered.sort((a, b) => {
+        const statusA = state.statuses.find(s => s.id === a.status_id)?.name || "";
+        const statusB = state.statuses.find(s => s.id === b.status_id)?.name || "";
+        return statusA.localeCompare(statusB);
+    });
+}
     return filtered;
 }

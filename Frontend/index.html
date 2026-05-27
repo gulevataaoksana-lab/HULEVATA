@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Сервіс репортів — Варіант 6</title>
+  <title>Сервіс «репорт вразливості» — Варіант 6</title>
   <link rel="stylesheet" href="styles.css" />
- <script type="module" src="./dist/main.js" defer></script>
+  <script type="module" src="./dist/main.js" defer></script>
 </head>
 <body>
   <div id="globalLoader" class="loader-overlay hidden">
@@ -16,7 +16,7 @@
 
   <header class="page-header">
     <div class="topbar">
-      <input type="text" id="searchInput" placeholder="Пошук за назвою або автором..." />
+      <input type="text" id="searchInput" placeholder="Пошук за назвою..." />
       <div class="top-toolbar">
         
         <select id="sortOrder">
@@ -27,68 +27,133 @@
         </select>
         
         <select id="filterStatus">
+          <option value="">Статус (усі)</option>
         </select>
         
         <select id="filterSeverity">
           <option value="">Критичність (усі)</option>
-          <option value="Низький">Низький</option>
-          <option value="Середній">Середній</option>
-          <option value="Високий">Високий</option>
           <option value="Критичний">Критичний</option>
+          <option value="Високий">Високий</option>
+          <option value="Середній">Середній</option>
+          <option value="Низький">Низький</option>
         </select>
-        <button id="clearBtn" type="button">Очистити фільтри</button>
+        <button id="resetFiltersBtn" type="button" style="background-color: #888; padding: 8px 15px;">Скинути</button>
       </div>
     </div>
   </header>
 
+  <h1>Сервіс «репорт вразливості» — Варіант 6</h1>
+
   <main class="app">
-    <section class="form-panel panel">
-      <h2>Створити / Редагувати звіт</h2>
-      <form id="reportForm">
-        <div class="field">
-          <label for="title">Назва вразливості *</label>
-          <input type="text" id="title" required />
+    <div class="form-column form-panel">
+      
+      <section class="panel auth-panel" style="margin-bottom: 20px;">
+        <h2>Авторизація</h2>
+        <form id="loginForm">
+          <div class="field">
+            <label for="loginUsername">Логін (ID користувача)</label>
+            <input type="text" id="loginUsername" required placeholder="Наприклад, u1" />
+          </div>
+          <div class="field">
+            <label for="loginPassword">Пароль</label>
+            <input type="password" id="loginPassword" required placeholder="Наприклад, qwerty" />
+          </div>
+          <button type="submit" class="btn-submit" style="width: 100%;">Увійти</button>
+        </form>
+
+        <div id="userInfoBlock" class="hidden" style="margin-top: 10px; text-align: center;">
+          <p>Ви увійшли як: <strong id="currentUserName">—</strong></p>
+          <button id="logoutBtn" type="button" class="btn-delete" style="width: 100%; margin-top: 5px;">Вийти</button>
         </div>
-        <div class="field">
-          <label for="userId">ID Автора (напр. u1) *</label>
-          <input type="text" id="userId" required />
-        </div>
-        <div class="field">
-          <label for="userName">Ім'я Автора *</label>
-          <input type="text" id="userName" required />
-        </div>
-        <div class="field">
-          <label for="severity">Критичність *</label>
-          <select id="severity" required>
-            <option value="" disabled selected>Оберіть критичність</option>
-            <option value="Низький">Низький</option>
-            <option value="Середній">Середній</option>
-            <option value="Високий">Високий</option>
-            <option value="Критичний">Критичний</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="status">Статус *</label>
-          <select id="status" required>
-          </select>
-        </div>
-        <div class="field">
-          <label for="description">Опис *</label>
-          <textarea id="description" rows="4" required></textarea>
-        </div>
-        <div class="actions">
-          <button id="submitBtn" type="submit">Додати звіт</button>
-        </div>
-      </form>
-    </section>
+      </section>
+
+      <section class="panel">
+        <h2 id="formTitle">Створити / Редагувати звіт</h2>
+        <form id="reportForm">
+          <div class="field">
+            <label for="title">Назва інциденту *</label>
+            <input type="text" id="title" required placeholder="Введіть назву проблеми..." />
+          </div>
+
+          <div class="field">
+            <label for="severity">Рівень критичності *</label>
+            <select id="severity" required>
+              <option value="" disabled selected>Оберіть критичність</option>
+              <option value="Низький">Низький</option>
+              <option value="Середній">Середній</option>
+              <option value="Високий">Високий</option>
+              <option value="Критичний">Критичний</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="status">Статус *</label>
+            <select id="status" required>
+              <option value="" disabled selected>Оберіть статус</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="description">Детальний опис</label>
+            <textarea id="description" rows="4" placeholder="Опишіть проблему..."></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn-submit">Зберегти</button>
+            <button type="button" id="clearBtn">Скасувати</button>
+          </div>
+        </form>
+      </section>
+    </div>
 
     <div class="tables-column">
+      <section class="panel stats-panel">
+        <h2>Статистики інцидентів</h2>
+        <div style="display: flex; gap: 10px; margin-bottom: 15px; align-items: flex-end;">
+            <div class="field" style="margin: 0; flex: 1;">
+                <label for="statSeverity">Критичність</label>
+                <select id="statSeverity">
+                    <option value="" disabled selected>Оберіть критичність</option>
+                    <option value="Критичний">Критичний</option>
+                    <option value="Високий">Високий</option>
+                    <option value="Середній">Середній</option>
+                    <option value="Низький">Низький</option>
+                </select>
+            </div>
+            <div class="field" style="margin: 0; flex: 1;">
+                <label for="statStatus">Статус</label>
+                <select id="statStatus">
+                    <option value="" disabled selected>Оберіть статус</option>
+                </select>
+            </div>
+            <button id="getStatsBtn" type="button" style="height: 36px; padding: 0 15px;">Розрахувати</button>
+        </div>
+        
+        <table>
+          <thead>
+            <tr>
+              <th>Рівень критичності</th>
+              <th>Статус</th> 
+              <th>Кількість звітів</th>
+            </tr>
+          </thead>
+          <tbody id="severityStatsBody"></tbody>
+        </table>
+      </section>
+
       <section class="panel list-panel">
         <h2>Список звітів</h2>
         <div style="overflow-x: auto;">
           <table>
             <thead>
-              <tr><th>Назва</th><th>Критичність</th><th>Статус</th><th>Опис</th><th>Автор</th><th>Дії</th></tr>
+              <tr>
+                <th>Назва</th>
+                <th>Критичність</th>
+                <th>Статус</th>
+                <th>Опис</th>
+                <th>Автор</th>
+                <th>Дії</th>
+              </tr>
             </thead>
             <tbody id="reportsTableBody"></tbody>
           </table>
@@ -99,22 +164,33 @@
         <h2>Користувачі</h2>
         <table>
           <thead>
-            <tr><th>ID</th><th>Ім'я</th><th>Дії</th></tr>
+            <tr>
+              <th>ID</th>
+              <th>Ім'я</th>
+              <th>Дії</th>
+            </tr>
           </thead>
           <tbody id="usersTableBody"></tbody>
         </table>
       </section>
-   <section class="panel list-panel">
+
+      <section class="panel list-panel">
         <h2>Доступні статуси</h2>
         <div class="field-inline" style="display: flex; gap: 5px; margin-bottom: 10px;">
-            <input type="text" id="newStatusName" placeholder="Нова назва..." style="flex: 1;">
+            <input type="text" id="newStatusName" placeholder="Нова назва..." style="flex: 1;" />
             <button id="addStatusBtn" type="button">Додати</button>
         </div>
         <table>
           <thead>
-            <tr><th>ID</th><th>Назва</th><th>Дії</th></tr>
+            <tr>
+              <th>ID</th>
+              <th>Назва</th>
+              <th>Опис</th>
+              <th>Дії</th>
+            </tr>
           </thead>
-          <tbody id="statusesTableBody"></tbody> </table>
+          <tbody id="statusesTableBody"></tbody>
+        </table>
       </section>
     </div>
   </main>

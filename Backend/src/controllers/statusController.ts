@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import * as service from '../services/statusService';
 import { formatResponse } from '../utils/Utilities';
 
-export async function getStatuses(req: Request, res: Response, next: NextFunction) {
+export async function getStatuses(_req: Request, res: Response, next: NextFunction) {
     try {
         const statuses = await service.getAllStatuses();
         res.status(200).json(formatResponse(statuses, 'Статуси отримано'));

@@ -2,7 +2,16 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "CommonJS",
-    "strict": false,
+    "strict": true,                                 /* Вмикає всі суворі перевірки типів */
+    "noImplicitAny": true,                          /* Забороняє використовувати 'any' там, де тип не вказано */
+    "strictNullChecks": true,                       /* Забороняє помилки з null та undefined */
+    "strictFunctionTypes": true,                    /* Сувора перевірка типів функцій */
+    "noImplicitThis": true,                         /* Перевірка 'this' */
+    "useUnknownInCatchVariables": true,             /* Робить помилки в catch типом 'unknown' замість 'any' */
+    "noUnusedLocals": true,                         /* Видає помилку, якщо є змінні, які не використовуються */
+    "noUnusedParameters": true,                     /* Видає помилку, якщо в функцію передані зайві параметри */
+    "noImplicitReturns": true,                      /* Видає помилку, якщо функція повертає значення не у всіх випадках */
+    
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,

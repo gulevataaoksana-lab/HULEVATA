@@ -50,15 +50,26 @@ export const importReports = async (data: any[]): Promise<void> => {
     }
 };
 
-export async function updateReport(id: number, data: UpdateReportDto): Promise<Report> {
+export async function updateReport(id: number, data: UpdateReportDto, currentUserId: string): Promise<Report> {
     const existing = await repo.getById(id);
     if (!existing) {
         throw new AppError("Звіт не знайдено ", 404, 'NOT_FOUND');
     }
+    if (existing.reporter_id !== currentUserId) {
+        throw new AppError("Доступ заборонено: ви не є автором цього звіту", 403, 'FORBIDDEN');
+    }
     return await repo.update(id, data);
 }
 
-export async function deleteReport(id: number): Promise<void> {
+export async function deleteReport(id: number, currentUserId: string): Promise<void> {
+    const existing = await repo.getById(id);
+    if (!existing) {
+        throw new AppError("Звіт не знайдено", 404, 'NOT_FOUND');
+    }
+    if (existing.reporter_id !== currentUserId) {
+        throw new AppError("Доступ заборонено: ви не можете видалити чужий звіт", 403, 'FORBIDDEN');
+    }
+
     const result = await repo.remove(id);
     if (result.changes === 0) {
         throw new AppError("Не вдалося видалити звіт ", 404, 'DELETE_FAILED');

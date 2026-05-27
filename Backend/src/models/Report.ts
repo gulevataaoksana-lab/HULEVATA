@@ -15,8 +15,8 @@ export interface CreateReportDto {
     severity?: string;
     status_id?: number;
     description?: string;
-    reporter_id: string;
-    authorName: string;
+    reporter_id?: string; 
+    authorName?: string;
 }
 
 export type UpdateReportDto = Partial<CreateReportDto>;

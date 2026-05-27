@@ -15,8 +15,8 @@ export interface Report {
     severity: string;
     status_id: number;
     description?: string | null;
-    reporter_id: string;
-    authorName: string;
+    reporter_id?: string; 
+    authorName?: string;  
     createdAt?: string;
 }
 
@@ -25,6 +25,4 @@ export interface CreateReportDto {
     severity: string;
     status_id: number;
     description?: string;
-    reporter_id: string;
-    authorName: string;
 }

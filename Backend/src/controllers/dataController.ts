@@ -4,6 +4,14 @@ import { formatResponse, isEmpty } from '../utils/Utilities';
 import { AppError } from '../errors/AppError';
 import { CreateReportDto, UpdateReportDto } from '../models/Report';
 
+
+export interface AuthRequest extends Request {
+    user?: {
+        id: string;
+        name: string;
+    };
+}
+
 export async function getReports(req: Request, res: Response, next: NextFunction) {
     try {
         let reports = await service.getAllReports();
@@ -38,42 +46,51 @@ export async function getReportById(req: Request, res: Response, next: NextFunct
     }
 }
 
-export async function createReport(req: Request, res: Response, next: NextFunction) {
+export async function createReport(req: AuthRequest, res: Response, next: NextFunction) {
     try {
         const body: CreateReportDto = req.body;
+        const user = req.user!; 
 
-        
         if (isEmpty(body.title)) {
             throw new AppError("Назва звіту не може бути порожньою", 400, 'VALIDATION_ERROR');
         }
 
-        const newReport = await service.createReport(body);
+        const newReportDto = {
+            ...body,
+            reporter_id: user.id,
+            authorName: user.name
+        };
+
+        const newReport = await service.createReport(newReportDto);
         res.status(201).json(formatResponse(newReport, 'Звіт успішно створено'));
     } catch (error) {
         next(error);
     }
 }
 
-export async function updateReport(req: Request, res: Response, next: NextFunction) {
+export async function updateReport(req: AuthRequest, res: Response, next: NextFunction) {
     try {
         const id = Number(req.params.id);
         const body: UpdateReportDto = req.body;
+        const user = req.user!; 
 
         if (isNaN(id)) throw new AppError("Некоректний ID для оновлення", 400, 'INVALID_ID');
 
-        const updated = await service.updateReport(id, body);
+        const updated = await service.updateReport(id, body, user.id);
         res.status(200).json(formatResponse(updated, 'Звіт оновлено'));
     } catch (error) {
         next(error);
     }
 }
 
-export async function deleteReport(req: Request, res: Response, next: NextFunction) {
+export async function deleteReport(req: AuthRequest, res: Response, next: NextFunction) {
     try {
         const id = Number(req.params.id);
+        const user = req.user!;
+
         if (isNaN(id)) throw new AppError("Некоректний ID для видалення", 400, 'INVALID_ID');
 
-        await service.deleteReport(id);
+        await service.deleteReport(id, user.id);
         res.status(200).json(formatResponse(null, 'Звіт видалено'));
     } catch (error) {
         next(error);
@@ -81,7 +98,7 @@ export async function deleteReport(req: Request, res: Response, next: NextFuncti
 }
 
 
-export async function importReports(req: Request, res: Response, next: NextFunction) {
+export async function importReports(req: AuthRequest, res: Response, next: NextFunction) {
     try {
         const items: CreateReportDto[] = req.body;
         
