@@ -165,7 +165,7 @@ DELETE /api/v1/reports/:id — видалення звіту.
    ```bash
    npm install
 
-Запусr серверf:
+Запусr сервера:
 Bash
 npm run dev 
 
