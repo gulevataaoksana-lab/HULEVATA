@@ -1,6 +1,6 @@
 import { getFilteredReports, state } from './state.js';
-import { ReportService, UserService, StatusService } from './apiClients.js';
-import { renderAll, showToast, showLoader, hideLoader, populateSelects, renderStats } from './ui.js';
+import { ReportService, UserService, StatusService, StatisticsService } from './apiClients.js';
+import { renderAll, showToast, showLoader, hideLoader, populateSelects, renderStats, renderAverageCount} from './ui.js';
 import { CreateReportDto } from './types.js';
 
 function onSearch(e: Event) {
@@ -221,7 +221,31 @@ function init() {
             hideLoader();
         }
     });
+document.getElementById("getTotalBtn")?.addEventListener("click", async () => {
+        const select = document.getElementById("averageStatusSelect") as HTMLSelectElement;
+        const statusId = select.value;
+        
+        if (!statusId) {
+            showToast("Будь ласка, оберіть статус для розрахунку", "error");
+            return;
+        }
 
+        const statusName = select.options[select.selectedIndex].text;
+
+        showLoader();
+        try {
+            const result = await StatisticsService.getAverageReportsPerStatus(Number(statusId));
+            if (result !== null && result.average !== undefined) {
+                renderAverageCount(result.average, statusName);
+                showToast("Розраховано успішно");
+            }
+        } catch (error) {
+            showToast("Помилка при розрахунку", "error");
+        } finally {
+            hideLoader();
+        }
+    });
+    
     document.body.addEventListener("click", async (e) => {
         const target = e.target as HTMLElement;
         const action = target.dataset.action;

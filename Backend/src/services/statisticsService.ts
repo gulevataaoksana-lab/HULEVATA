@@ -13,3 +13,7 @@ export async function getCalculatedStats(severity: string, statusId: string): Pr
         count: filtered.length 
     }];
 }
+
+export async function getStatusRatio(statusId: number): Promise<number> {
+    return await repo.getStatusRatio(statusId);
+}

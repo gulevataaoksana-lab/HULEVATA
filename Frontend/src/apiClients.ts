@@ -10,6 +10,21 @@ export interface ISeverityStat {
     status_id: number;
 }
 
+export interface IAverageCount {
+    average: number;
+}
+
+export const StatisticsService = {
+    getReportStats: async (severity: string, statusId: string) => {
+        return await httpClient<ISeverityStat[]>(`${API_URL}/statistics/report`, {
+            method: 'POST',
+            body: JSON.stringify({ severity, statusId })
+        });
+    },
+    getAverageReportsPerStatus: (statusId: number) => 
+        httpClient<IAverageCount>(`${API_URL}/statistics/average?statusId=${statusId}`)
+};
+
 export const ReportService = {
     getReports: (searchQuery?: string) => {
         const url = searchQuery 
@@ -52,11 +67,3 @@ export const StatusService = {
     })
 };
 
-export const StatisticsService = {
-    getReportStats: async (severity: string, statusId: string) => {
-        return await httpClient<ISeverityStat[]>(`${API_URL}/statistics/report`, {
-            method: 'POST',
-            body: JSON.stringify({ severity, statusId })
-        });
-    }
-};

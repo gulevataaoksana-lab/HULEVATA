@@ -24,10 +24,20 @@ function escapeHtml(text: string): string {
     return div.innerHTML;
 }
 
+export function renderAverageCount(average: number, statusName: string): void {
+    const container = document.getElementById("totalCountContainer");
+    if (container) {
+        const percent = (average * 100).toFixed(0);
+        container.innerHTML = `<span>Звіти зі статусом <strong>"${escapeHtml(statusName)}"</strong> складають <strong style="font-size: 1.2em; color: #ffffff;">${percent}%</strong> від загальної кількості.</span>`;
+    }
+}
+
 export function populateSelects(statuses: Status[]): void {
     const statusFilter = document.getElementById("filterStatus");
     const statusForm = document.getElementById("status"); 
     const statStatusForm = document.getElementById("statStatus");
+    
+    const avgStatusSelect = document.getElementById("averageStatusSelect");
     
     const options = statuses.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
 
@@ -41,6 +51,10 @@ export function populateSelects(statuses: Status[]): void {
 
     if (statStatusForm) {
         statStatusForm.innerHTML = '<option value="" disabled selected>Оберіть статус</option>' + options;
+    }
+    
+    if (avgStatusSelect) {
+        avgStatusSelect.innerHTML = '<option value="" disabled selected>Оберіть статус</option>' + options;
     }
 }
 
